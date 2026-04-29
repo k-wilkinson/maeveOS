@@ -1,10 +1,10 @@
 {
-  "name": "daedalos",
-  "version": "2.0.0",
+  "name": "maeveos",
+  "version": "0.0.1",
   "description": "Desktop environment in the browser",
   "author": {
-    "name": "Dustin Brett",
-    "email": "dustinbrett@gmail.com",
+    "name": "Kote Wilkinson",
+    "email": "kote.wilkinson@gmail.com",
     "url": "https://dustinbrett.com"
   },
   "license": "MIT",
@@ -18,8 +18,8 @@
     "build:fs:public": "node scripts/fs2json.js --exclude .index,private --out public/.index/fs.9p.json ./public",
     "build:minify": "node scripts/minifyHtml.js && node scripts/minifyJs.js",
     "build:prebuild": "node scripts/robots.js && node scripts/rssBuilder.js && node scripts/searchIndex.js && node scripts/preloadIcons.js && node scripts/cacheShortcuts.js && yarn build:fs:public",
-    "docker:build": "docker build -t daedalos .",
-    "docker:run": "docker run -dp 3000:3000 --rm --name daedalos daedalos",
+    "docker:build": "docker build -t maeveos .",
+    "docker:run": "docker run -dp 3000:3000 --rm --name maeveos maeveos",
     "dev": "next dev",
     "dev:ssl": "next dev --experimental-https",
     "e2e": "playwright test",
@@ -48,9 +48,8 @@
     "@panzoom/panzoom": "^4.6.0",
     "@prettier/plugin-xml": "^3.4.2",
     "@wasmer/wasm-transformer": "^0.12.0",
-    "Burn-My-Windows": "https://github.com/Schneegans/Burn-My-Windows",
     "ani-cursor": "^0.0.5",
-    "browserfs": "https://github.com/jvilk/BrowserFS.git#a96aa2d",
+    "browserfs": "https://github.com/jvilk/BrowserFS",
     "butterchurn-presets": "^3.0.0-beta.4",
     "canvas-confetti": "^1.9.3",
     "decode-ico": "^0.4.1",
@@ -156,5 +155,6 @@
     "webamp": "^2.2.0",
     "xlsx": "^0.18.5",
     "xterm": "^5.3.0"
-  }
+  },
+  "packageManager": "yarn@4.14.1"
 }

@@ -8,7 +8,6 @@ import { type ApiError } from "browserfs/dist/node/core/api_error";
 import { type FSModule } from "browserfs/dist/node/core/FS";
 import type IZipFS from "browserfs/dist/node/backend/ZipFS";
 import type IIsoFS from "browserfs/dist/node/backend/IsoFS";
-import type * as IBrowserFS from "browserfs";
 import useTransferDialog from "components/system/Dialogs/Transfer/useTransferDialog";
 import {
   type InputChangeEvent,
@@ -271,7 +270,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
         import("public/System/BrowserFS/extrafs.min.js").then((ExtraFS) => {
           const {
             FileSystem: { Emscripten },
-          } = ExtraFS as typeof IBrowserFS;
+          } = ExtraFS;
 
           Emscripten?.Create({ FS }, (error, newFs) => {
             const emscriptenFS =
@@ -316,7 +315,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
         FileSystem: { HTTPRequest },
       } = (await import(
         "public/System/BrowserFS/browserfs.min.js"
-      )) as typeof IBrowserFS;
+      ));
 
       return new Promise((resolve, reject) => {
         HTTPRequest?.Create(
@@ -449,7 +448,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
         import("public/System/BrowserFS/extrafs.min.js").then((ExtraFS) => {
           const {
             FileSystem: { IsoFS, ZipFS },
-          } = ExtraFS as typeof IBrowserFS;
+          } = ExtraFS;
 
           if (isIso) {
             IsoFS?.Create({ data: fileData }, createFs);

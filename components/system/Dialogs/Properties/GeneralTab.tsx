@@ -8,7 +8,6 @@ import {
   getModifiedTime,
 } from "components/system/Files/FileEntry/functions";
 import {
-  type FileStat,
   removeInvalidFilenameCharacters,
 } from "components/system/Files/FileManager/functions";
 import { useFileSystem } from "contexts/fileSystem";
@@ -253,7 +252,7 @@ const GeneralTab: FC<TabProps> = ({ icon, id, isShortcut, pid, url }) => {
               <td>
                 {stats &&
                   dateTimeString(
-                    new Date(getModifiedTime(url, stats as FileStat))
+                    new Date(getModifiedTime(url, stats))
                   )}
               </td>
             </tr>

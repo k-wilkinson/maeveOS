@@ -2,7 +2,6 @@ import { join } from "path";
 import { type FSModule } from "browserfs/dist/node/core/FS";
 import Stats, { FileType } from "browserfs/dist/node/core/node_fs_stats";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type * as IBrowserFS from "browserfs";
 import type EmscriptenFileSystem from "browserfs/dist/node/backend/Emscripten";
 import type MountableFileSystem from "browserfs/dist/node/backend/MountableFileSystem";
 import {
@@ -36,7 +35,7 @@ export type AsyncFS = {
   ) => Promise<boolean>;
 };
 
-const { BFSRequire, configure } = BrowserFS as typeof IBrowserFS;
+const { BFSRequire, configure } = BrowserFS;
 
 export type EmscriptenFS = {
   DB_NAME: () => string;
@@ -276,7 +275,7 @@ const useAsyncFs = (): AsyncFSModule => {
         stat: queueFsCall("stat"),
         unlink: queueFsCall("unlink"),
         writeFile: queueFsCall("writeFile"),
-      } as Partial<FSModule> as FSModule);
+      } as Partial<FSModule>);
     } else if ("getRootFS" in fs) {
       runQueuedFsCalls(fs);
     } else {
