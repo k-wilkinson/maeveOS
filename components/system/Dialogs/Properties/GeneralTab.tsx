@@ -2,10 +2,10 @@ import { basename, dirname, extname, join } from "path";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Buttons from "components/system/Dialogs/Properties/Buttons";
 import useStats from "components/system/Dialogs/Properties/useStats";
-import {
+import getModifiedTime, {
   getFileType,
   getIconFromIni,
-  getModifiedTime,
+
 } from "components/system/Files/FileEntry/functions";
 import {
   removeInvalidFilenameCharacters,

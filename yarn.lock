@@ -2453,6 +2453,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^25.2.0":
+  version: 25.6.0
+  resolution: "@types/node@npm:25.6.0"
+  dependencies:
+    undici-types: "npm:~7.19.0"
+  checksum: 10c0/d2d2015630ff098a201407f55f5077a20270ae4f465c739b40865cd9933b91b9c5d2b85568eadaf3db0801b91e267333ca7eb39f007428b173d1cdab4b339ac5
+  languageName: node
+  linkType: hard
+
 "@types/normalize-package-data@npm:^2.4.0":
   version: 2.4.4
   resolution: "@types/normalize-package-data@npm:2.4.4"
@@ -3242,10 +3251,78 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@xterm/xterm@npm:^5.5.0":
+  version: 5.5.0
+  resolution: "@xterm/xterm@npm:5.5.0"
+  checksum: 10c0/358801feece58617d777b2783bec68dac1f52f736da3b0317f71a34f4e25431fb0b1920244f678b8d673f797145b4858c2a5ccb463a4a6df7c10c9093f1c9267
+  languageName: node
+  linkType: hard
+
 "@zeit/schemas@npm:2.36.0":
   version: 2.36.0
   resolution: "@zeit/schemas@npm:2.36.0"
   checksum: 10c0/858c3ae46d23122f65d576013dc74f120af0ca7f3256c4b7077bcd12e952c8f71d8241a5165c23d18f6378e198a1db7e93bc8fae8ed0769e4cf4e2df953ee955
+  languageName: node
+  linkType: hard
+
+"@zenfs/archives@npm:^1.3.6":
+  version: 1.3.6
+  resolution: "@zenfs/archives@npm:1.3.6"
+  dependencies:
+    fflate: "npm:^0.8.2"
+  peerDependencies:
+    "@zenfs/core": ^2.4.2
+    kerium: ^1.3.4
+    memium: ^0.4.0
+    utilium: ^3.0.0
+  checksum: 10c0/2e6b8769fd1fcd3a762b88891d34a3d9c3ad647bcdad60c08c7068c31c43ccbb2d82b9bc2704fcc5e59832929f7f830fad9f31c42f80785ccec76b4c19957bbe
+  languageName: node
+  linkType: hard
+
+"@zenfs/core@npm:^2.5.6":
+  version: 2.5.6
+  resolution: "@zenfs/core@npm:2.5.6"
+  dependencies:
+    "@types/node": "npm:^25.2.0"
+    buffer: "npm:^6.0.3"
+    eventemitter3: "npm:^5.0.1"
+    kerium: "npm:^1.3.4"
+    memium: "npm:^0.4.0"
+    readable-stream: "npm:^4.5.2"
+    utilium: "npm:^3.0.0"
+  bin:
+    make-index: scripts/make-index.js
+    zci: scripts/ci-cli.js
+    zenfs-test: scripts/test.js
+  checksum: 10c0/e469570566e63812a34541ad684a107e1f21a68ff89591a34866d8f51f7e9bacc9de4bc53f163aec089099d668e5ea61b16a03a095a9fb15a6edb3fb15a392c1
+  languageName: node
+  linkType: hard
+
+"@zenfs/dom@npm:^1.2.9":
+  version: 1.2.9
+  resolution: "@zenfs/dom@npm:1.2.9"
+  peerDependencies:
+    "@zenfs/core": ^2.3.11
+    kerium: ^1.3.4
+    utilium: ^3.0.0
+  checksum: 10c0/9cd1fb9d169185c48f15014244de8072c6b187a9d355319b801f1844d54bdbc87fde55c20f75035ed64bd0e3af54d822671cb0032318b8d346d4a58e2ffbcc98
+  languageName: node
+  linkType: hard
+
+"@zenfs/emscripten@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "@zenfs/emscripten@npm:1.0.7"
+  peerDependencies:
+    "@zenfs/core": ^2.4.2
+    kerium: ^1.3.4
+  checksum: 10c0/668686d97ebb4c3689d653e6e559c2c3431532fb1d35dd4ebeb7d58487f57358590f708ab2fa312a5697f321835a9ef11171da45701197ba1f5673df34e3f08d
+  languageName: node
+  linkType: hard
+
+"Burn-My-Windows@file:vendor/Burn-My-Windows::locator=maeveos%40workspace%3A.":
+  version: 43.0.0
+  resolution: "Burn-My-Windows@file:vendor/Burn-My-Windows#vendor/Burn-My-Windows::hash=88a29d&locator=maeveos%40workspace%3A."
+  checksum: 10c0/56c8dbe9b5ccad3078f3156fc85785f552ac7e209312b79a6535194244fffb6c1295d5a7665286ce4fe60cd2a1d8af357dc546413a4351fa51e47212b0fa36ad
   languageName: node
   linkType: hard
 
@@ -3900,13 +3977,6 @@ __metadata:
   dependencies:
     fill-range: "npm:^7.1.1"
   checksum: 10c0/7c6dfd30c338d2997ba77500539227b9d1f85e388a5f43220865201e407e076783d0881f2d297b9f80951b4c957fcf0b51c1d2d24227631643c3f7c284b0aa04
-  languageName: node
-  linkType: hard
-
-"browserfs@https://github.com/jvilk/BrowserFS":
-  version: 2.0.0
-  resolution: "browserfs@https://github.com/jvilk/BrowserFS.git#commit=76fd5122fcf3ad6bff3315550aafb041cfb6a72e"
-  checksum: 10c0/524546c5258bbc510b40226dc380730ee551eb44a5c3892149395768a7fedffdc464403374a15deecde17590fd586a55ae20a5454a7be0d0d0f72ba4dc13415b
   languageName: node
   linkType: hard
 
@@ -8832,6 +8902,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"kerium@npm:^1.3.2, kerium@npm:^1.3.4":
+  version: 1.3.9
+  resolution: "kerium@npm:1.3.9"
+  dependencies:
+    utilium: "npm:^3.0.0"
+  checksum: 10c0/41c0480b728490d920ca8284b28ac0440b36f9f9a8eaac59221fa4156f767b04266a8472a49e8767b4f2125f354c8c5bf345fda1de42ea95da8e883497461c72
+  languageName: node
+  linkType: hard
+
 "keyv@npm:^4.5.3":
   version: 4.5.4
   resolution: "keyv@npm:4.5.4"
@@ -9086,8 +9165,12 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^8.46.1"
     "@typescript-eslint/parser": "npm:^8.46.1"
     "@wasmer/wasm-transformer": "npm:^0.12.0"
+    "@zenfs/archives": "npm:^1.3.6"
+    "@zenfs/core": "npm:^2.5.6"
+    "@zenfs/dom": "npm:^1.2.9"
+    "@zenfs/emscripten": "npm:^1.0.7"
+    Burn-My-Windows: "file:vendor/Burn-My-Windows"
     ani-cursor: "npm:^0.0.5"
-    browserfs: "https://github.com/jvilk/BrowserFS"
     butterchurn-presets: "npm:^3.0.0-beta.4"
     canvas-confetti: "npm:^1.9.3"
     decode-ico: "npm:^0.4.1"
@@ -9241,6 +9324,16 @@ __metadata:
   bin:
     mediainfo.js: dist/esm/cli.js
   checksum: 10c0/aecb7a949923c86384988009669701aaa187ca77bdf5d83d87afacc5a088b21e1343a7477201bfac3e97f75730c81561a9078c28b0911ff6d7be0de0f10d30ff
+  languageName: node
+  linkType: hard
+
+"memium@npm:^0.4.0":
+  version: 0.4.5
+  resolution: "memium@npm:0.4.5"
+  dependencies:
+    kerium: "npm:^1.3.2"
+    utilium: "npm:^3.0.0"
+  checksum: 10c0/eb7355d7262cda7e019bffae499c926a5d97e96a40064ad9846dcb26c397814110a235f029d0fb8623c6b63d4c1c80b1b1606c5641a3ab70a1c898cfeba45b02
   languageName: node
   linkType: hard
 
@@ -10792,6 +10885,19 @@ __metadata:
     process: "npm:^0.11.10"
     string_decoder: "npm:^1.3.0"
   checksum: 10c0/a2c80e0e53aabd91d7df0330929e32d0a73219f9477dbbb18472f6fdd6a11a699fc5d172a1beff98d50eae4f1496c950ffa85b7cc2c4c196963f289a5f39275d
+  languageName: node
+  linkType: hard
+
+"readable-stream@npm:^4.5.2":
+  version: 4.7.0
+  resolution: "readable-stream@npm:4.7.0"
+  dependencies:
+    abort-controller: "npm:^3.0.0"
+    buffer: "npm:^6.0.3"
+    events: "npm:^3.3.0"
+    process: "npm:^0.11.10"
+    string_decoder: "npm:^1.3.0"
+  checksum: 10c0/fd86d068da21cfdb10f7a4479f2e47d9c0a9b0c862fc0c840a7e5360201580a55ac399c764b12a4f6fa291f8cee74d9c4b7562e0d53b3c4b2769f2c98155d957
   languageName: node
   linkType: hard
 
@@ -12989,6 +13095,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"undici-types@npm:~7.19.0":
+  version: 7.19.2
+  resolution: "undici-types@npm:7.19.2"
+  checksum: 10c0/7159f10546f9f6c47d36776bb1bbf8671e87c1e587a6fee84ae1f111ae8de4f914efa8ca0dfcd224f4f4a9dfc3f6028f627ccb5ddaccf82d7fd54671b89fac3e
+  languageName: node
+  linkType: hard
+
 "undici@npm:^6.25.0":
   version: 6.25.0
   resolution: "undici@npm:6.25.0"
@@ -13148,6 +13261,21 @@ __metadata:
   dependencies:
     inherits: "npm:2.0.3"
   checksum: 10c0/d29f6893e406b63b088ce9924da03201df89b31490d4d011f1c07a386ea4b3dbe907464c274023c237da470258e1805d806c7e4009a5974cd6b1d474b675852a
+  languageName: node
+  linkType: hard
+
+"utilium@npm:^3.0.0":
+  version: 3.2.0
+  resolution: "utilium@npm:3.2.0"
+  dependencies:
+    "@xterm/xterm": "npm:^5.5.0"
+    eventemitter3: "npm:^5.0.1"
+  dependenciesMeta:
+    "@xterm/xterm":
+      optional: true
+  bin:
+    lice: scripts/lice.js
+  checksum: 10c0/d36bb57ed5ce0d5c0e1bc64944223caf8e0b843b68d97538fe19037be742f33a8984e1e2b398965bbd737688954f5b6c2303510d044072b303976e504ca31cd8
   languageName: node
   linkType: hard
 

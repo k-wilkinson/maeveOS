@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { type ApiError } from "browserfs/dist/node/core/api_error";
+type ApiError = { code?: string; path?: string };
 import { type SortBy } from "components/system/Files/FileManager/useSortBy";
 import { useFileSystem } from "contexts/fileSystem";
 import {

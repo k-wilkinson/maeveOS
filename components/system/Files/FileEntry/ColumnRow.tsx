@@ -1,12 +1,11 @@
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
 import { useCallback, useState, useRef, useEffect, memo } from "react";
 import { useTheme } from "styled-components";
-import StyledColumnRow from "components/system/Files/FileEntry/StyledColumnRow";
-import { type Columns } from "components/system/Files/FileManager/Columns/constants";
-import {
+import  { type Stats ,
   getDateModified,
   getFileType,
 } from "components/system/Files/FileEntry/functions";
+import StyledColumnRow from "components/system/Files/FileEntry/StyledColumnRow";
+import { type Columns } from "components/system/Files/FileManager/Columns/constants";
 import { UNKNOWN_SIZE } from "contexts/fileSystem/core";
 import { useFileSystem } from "contexts/fileSystem";
 import { getExtension, getFormattedSize } from "utils/functions";

@@ -37,8 +37,7 @@ import {
 import { displayLicense } from "components/apps/Terminal/useTerminal";
 import { resourceAliasMap } from "components/system/Dialogs/Run";
 import extensions from "components/system/Files/FileEntry/extensions";
-import {
-  getModifiedTime,
+import getModifiedTime, {
   getProcessByFileExtension,
   getShortcutInfo,
 } from "components/system/Files/FileEntry/functions";

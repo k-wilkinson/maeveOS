@@ -1,7 +1,7 @@
 import { basename, dirname } from "path";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
-import { getModifiedTime } from "components/system/Files/FileEntry/functions";
+import { type Stats } from "@zenfs/core";
+import getModifiedTime from "components/system/Files/FileEntry/functions";
 import { UNKNOWN_ICON } from "components/system/Files/FileManager/icons";
 import {
   Open,

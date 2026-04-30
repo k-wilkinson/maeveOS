@@ -1,5 +1,6 @@
 import { extname, join } from "path";
 import { type openDB } from "idb";
+import { type IndexData } from "@zenfs/core";
 import {
   type Mount,
   type ExtendedEmscriptenFileSystem,
@@ -40,8 +41,8 @@ export const KEYVAL_DB = `${KEYVAL_STORE_NAME}-store`;
 const IDX_SIZE = 1;
 const IDX_MTIME = 2;
 const IDX_TARGET = 3;
-const IDX_FILE_MODE = 33206;
-const IDX_DIR_MODE = 16822;
+export const IDX_FILE_MODE = 33206;
+export const IDX_DIR_MODE = 16822;
 const IDX_UID = 0;
 const IDX_GID = 0;
 // eslint-disable-next-line unicorn/no-null
@@ -91,6 +92,38 @@ export const parseDirectory = (array: FS9PV4[]): BFSFS => {
 };
 
 export const fs9pToBfs = (): BFSFS => parseDirectory(fsroot);
+
+type ZenFsIndexEntry = { mode: number; mtimeMs: number; size: number };
+export type ZenFsIndex = IndexData;
+
+const buildZenFsEntries = (
+  nodes: FS9PV4[],
+  parentPath: string,
+  entries: Record<string, ZenFsIndexEntry>
+): void => {
+  for (const [name, size, mtime, children] of nodes) {
+    const path = parentPath === "/" ? `/${name}` : `${parentPath}/${name}`;
+    const isDir = Array.isArray(children);
+    // eslint-disable-next-line no-param-reassign
+    entries[path] = {
+      mode: isDir ? IDX_DIR_MODE : IDX_FILE_MODE,
+      mtimeMs: mtime,
+      size: isDir ? 0 : size,
+    };
+    if (isDir) buildZenFsEntries(children, path, entries);
+  }
+};
+
+export const convertFs9pToZenFsIndex = (nodes: FS9PV4[]): ZenFsIndex => {
+  const entries: Record<string, ZenFsIndexEntry> = {
+    "/": { mode: IDX_DIR_MODE, mtimeMs: Date.now(), size: 0 },
+  };
+  buildZenFsEntries(nodes, "/", entries);
+  return { entries: entries as IndexData["entries"], version: 1 };
+};
+
+export const fs9pToZenFsIndex = (): ZenFsIndex =>
+  convertFs9pToZenFsIndex(fsroot);
 
 const parse9pV4ToV3 = (fs9p: FS9PV4[], path = "/"): FS9PV3[] =>
   fs9p.map(([name, mtime, size, target]) => {
@@ -203,7 +236,8 @@ export const getFileSystemHandles = async (): Promise<FileSystemHandles> => {
 export const isMountedFolder = (mount?: Mount): boolean =>
   typeof mount === "object" &&
   (MOUNTABLE_FS_TYPES.has(mount.getName()) ||
-    (mount as ExtendedEmscriptenFileSystem)._FS?.DB_STORE_NAME === "FILE_DATA");
+    (mount as unknown as ExtendedEmscriptenFileSystem)._FS?.DB_STORE_NAME ===
+      "FILE_DATA");
 
 export const getMountUrl = (
   url: string,

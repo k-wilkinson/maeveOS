@@ -47,9 +47,8 @@ import {
   haltEvent,
   label,
 } from "utils/functions";
-import {
+import getModifiedTime, {
   getInfoWithExtension,
-  getModifiedTime,
   getShortcutInfo,
 } from "components/system/Files/FileEntry/functions";
 import { useSession } from "contexts/session";

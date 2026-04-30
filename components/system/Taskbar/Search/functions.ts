@@ -1,6 +1,5 @@
 import { join } from "path";
-import { type FSModule } from "browserfs/dist/node/core/FS";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
+import { type Stats } from "@zenfs/core";
 import {
   getCachedIconUrl,
   getFileType,
@@ -26,7 +25,8 @@ export type ResultInfo = {
 };
 
 export const getResultInfo = async (
-  fs: FSModule | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fs: any,
   url: string,
   signal?: AbortSignal
 ): Promise<ResultInfo | undefined> => {
@@ -38,7 +38,7 @@ export const getResultInfo = async (
     pid = TEXT_EDITORS[0],
     url: infoUrl,
   } = await new Promise<FileInfo>((resolve) => {
-    fs.lstat(url, (err, stats) => {
+    fs.lstat(url, (err: unknown, stats: Stats | undefined) => {
       const isDirectory = !err && stats ? stats.isDirectory() : false;
       const extension = getExtension(url);
 

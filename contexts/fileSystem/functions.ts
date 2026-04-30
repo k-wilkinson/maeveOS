@@ -1,6 +1,6 @@
 import { join } from "path";
-import type HTTPRequest from "browserfs/dist/node/backend/HTTPRequest";
-import type OverlayFS from "browserfs/dist/node/backend/OverlayFS";
+// replaced HTTPRequest
+// replaced OverlayFS
 import { type FileSystemObserver } from "contexts/fileSystem/useFileSystemContextState";
 import { FS_HANDLES } from "utils/constants";
 import { type RootFileSystem } from "contexts/fileSystem/useAsyncFs";
@@ -100,18 +100,25 @@ export const resetStorage = (rootFs?: RootFileSystem): Promise<void> =>
     window.sessionStorage.clear();
 
     const clearFs = (): void => {
-      const overlayFs = rootFs?._getFs("/")?.fs as OverlayFS;
-      const overlayedFileSystems = overlayFs?.getOverlayedFileSystems();
-      const readable = overlayedFileSystems?.readable as HTTPRequest;
-      const writable = overlayedFileSystems?.writable;
+      try {
+        // ZenFS: root is CopyOnWrite with { source: Fetch (readonly), target: IndexedDB | InMemory (writable) }
+        const rootLayer: any = rootFs?._getFs?.("/")?.fs;
+        const writable = rootLayer?.target ?? rootLayer; // writable layer or fallback
 
-      readable?.empty();
-
-      if (writable?.getName() === "InMemory" || !writable?.empty) {
-        resolve();
-      } else {
-        writable.empty((apiError) => (apiError ? reject(apiError) : resolve()));
+        if (writable && typeof writable.empty === "function") {
+          if (writable.getName?.() === "InMemory" || !writable.empty) {
+            resolve();
+            return;
+          }
+          writable.empty((apiError: any) =>
+            apiError ? reject(apiError) : resolve()
+          );
+          return;
+        }
+      } catch {
+        // ignore any FS introspection errors
       }
+      resolve();
     };
 
     if (window.indexedDB) {

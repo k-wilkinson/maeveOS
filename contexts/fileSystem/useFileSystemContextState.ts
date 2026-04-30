@@ -1,13 +1,5 @@
 import { basename, dirname, isAbsolute, join } from "path";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  type BFSCallback,
-  type FileSystem,
-} from "browserfs/dist/node/core/file_system";
-import { type ApiError } from "browserfs/dist/node/core/api_error";
-import { type FSModule } from "browserfs/dist/node/core/FS";
-import type IZipFS from "browserfs/dist/node/backend/ZipFS";
-import type IIsoFS from "browserfs/dist/node/backend/IsoFS";
 import useTransferDialog from "components/system/Dialogs/Transfer/useTransferDialog";
 import {
   type InputChangeEvent,
@@ -18,29 +10,33 @@ import {
 } from "components/system/Files/FileManager/functions";
 import { type NewPath } from "components/system/Files/FileManager/useFolder";
 import {
+  convertFs9pToZenFsIndex,
   getFileSystemHandles,
   hasIndexedDB,
   isMountedFolder,
-  parseDirectory,
   KEYVAL_DB,
   type FS9PV4,
 } from "contexts/fileSystem/core";
 import useAsyncFs, {
   type AsyncFS,
   type EmscriptenFS,
-  type ExtendedEmscriptenFileSystem,
   type RootFileSystem,
 } from "contexts/fileSystem/useAsyncFs";
 import { useProcesses } from "contexts/process";
 import { type UpdateFiles } from "contexts/session/types";
 import {
   CLIPBOARD_FILE_EXTENSIONS,
-  DEFAULT_MAPPED_NAME,
   DESKTOP_PATH,
   PROCESS_DELIMITER,
   TRANSITIONS_IN_MILLISECONDS,
 } from "utils/constants";
 import { bufferToBlob, getExtension, getMimeType } from "utils/functions";
+
+// Minimal ApiError type to replace removed browserfs type
+interface ApiError {
+  code?: string;
+  path?: string;
+}
 
 export type FileSystemObserver = {
   disconnect: () => void;
@@ -68,17 +64,6 @@ type FilePasteOperations = Record<string, "copy" | "move">;
 
 type FileSystemWatchers = Record<string, UpdateFiles[]>;
 
-type IFileSystemAccess = {
-  FileSystem: {
-    FileSystemAccess: {
-      Create: (
-        opts: { handle: FileSystemDirectoryHandle },
-        cb: BFSCallback<FileSystem>
-      ) => void;
-    };
-  };
-};
-
 type FileSystemContextState = AsyncFS & {
   addFile: (
     directory: string,
@@ -96,7 +81,7 @@ type FileSystemContextState = AsyncFS & {
     overwrite?: boolean
   ) => Promise<string>;
   deletePath: (path: string) => Promise<boolean>;
-  fs?: FSModule;
+  fs?: any;
   mapFs: (
     directory: string,
     existingHandle?: FileSystemDirectoryHandle
@@ -115,7 +100,7 @@ type FileSystemContextState = AsyncFS & {
   rootFs?: RootFileSystem;
   setPasteList: React.Dispatch<React.SetStateAction<FilePasteOperations>>;
   unMapFs: (directory: string, hasNoHandle?: boolean) => Promise<void>;
-  unMountFs: (url: string) => void;
+  unMountFs: (url: string) => Promise<void>;
   updateFolder: (
     folder: string,
     newFile?: string,
@@ -264,41 +249,41 @@ const useFileSystemContextState = (): FileSystemContextState => {
     },
     []
   );
+
+  // mountEmscriptenFs - already updated to ZenFS in previous edit
   const mountEmscriptenFs = useCallback(
     async (FS: EmscriptenFS, fsName?: string) =>
-      new Promise<string>((resolve, reject) => {
-        import("public/System/BrowserFS/extrafs.min.js").then((ExtraFS) => {
-          const {
-            FileSystem: { Emscripten },
-          } = ExtraFS;
+      new Promise<string>(async (resolve, reject) => {
+        try {
+          const { Emscripten } = await import("@zenfs/emscripten");
+          const { resolveMountConfig, mount } = await import("@zenfs/core");
 
-          Emscripten?.Create({ FS }, (error, newFs) => {
-            const emscriptenFS =
-              newFs as unknown as ExtendedEmscriptenFileSystem;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newFs = await resolveMountConfig({ FS, backend: Emscripten } as any);
 
-            if (error || !newFs || !emscriptenFS._FS?.DB_NAME) {
-              reject(new Error("Error while mounting Emscripten FS."));
-              return;
-            }
+          if (!newFs) {
+            reject(new Error("Error while mounting Emscripten FS."));
+            return;
+          }
 
-            const dbName =
-              fsName ||
-              `${emscriptenFS._FS?.DB_NAME().replace(/\/+$/, "")}${
-                emscriptenFS._FS?.DB_STORE_NAME
-              }`;
+          const dbName =
+            fsName ||
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            `${(FS as any).DB_NAME?.().replace(/\/+$/, "") || "emscripten"}${
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (FS as any).DB_STORE_NAME || ""
+            }`;
 
-            try {
-              rootFs?.mount?.(join("/", dbName), newFs);
-            } catch {
-              // Ignore error during mounting
-            }
+          await mount(join("/", dbName), newFs);
 
-            resolve(dbName);
-          });
-        });
+          resolve(dbName);
+        } catch (error) {
+          reject(error);
+        }
       }),
     [rootFs]
   );
+
   const mountHttpRequestFs = useCallback(
     async (
       mountPoint: string,
@@ -311,34 +296,29 @@ const useFileSystemContextState = (): FileSystemContextState => {
         throw new Error("Invalid HTTPRequest FS object.");
       }
 
-      const {
-        FileSystem: { HTTPRequest },
-      } = (await import(
-        "public/System/BrowserFS/browserfs.min.js"
-      ));
+      const { Fetch, resolveMountConfig, mount } = await import("@zenfs/core");
 
-      return new Promise((resolve, reject) => {
-        HTTPRequest?.Create(
-          { baseUrl, index: parseDirectory(index.fsroot as FS9PV4[]) },
-          (error, newFs) => {
-            if (error || !newFs) {
-              reject(new Error("Error while mounting HTTPRequest FS."));
-            } else {
-              rootFs?.mount?.(mountPoint, newFs);
-              resolve();
-            }
-          }
-        );
+      const newFs = await resolveMountConfig({
+        backend: Fetch,
+        baseUrl: baseUrl ?? "/",
+        index: convertFs9pToZenFsIndex(index.fsroot as FS9PV4[]),
       });
+
+      if (!newFs) {
+        throw new Error("Error while mounting Fetch FS.");
+      }
+
+      await mount(mountPoint, newFs);
     },
     [rootFs]
   );
+
   const mapFs = useCallback(
     async (
       directory: string,
       existingHandle?: FileSystemDirectoryHandle
     ): Promise<string> => {
-      let handle: FileSystemDirectoryHandle;
+      let handle: FileSystemDirectoryHandle | undefined;
 
       try {
         handle =
@@ -352,121 +332,112 @@ const useFileSystemContextState = (): FileSystemContextState => {
         // Ignore cancelling the dialog
       }
 
-      return new Promise((resolve, reject) => {
-        if (handle instanceof FileSystemDirectoryHandle) {
-          import("public/System/BrowserFS/extrafs.min.js").then((ExtraFS) => {
-            const {
-              FileSystem: { FileSystemAccess },
-            } = ExtraFS as IFileSystemAccess;
+      if (!handle) {
+        throw new Error("No directory handle provided or selected.");
+      }
 
-            FileSystemAccess?.Create({ handle }, (error, newFs) => {
-              if (error || !newFs) {
-                reject(new Error("Error while mounting FileSystemAccess FS."));
-                return;
+      const { WebAccess } = await import("@zenfs/dom");
+      const { resolveMountConfig, mount } = await import("@zenfs/core");
+
+      const newFs = await resolveMountConfig({ backend: WebAccess, handle });
+
+      if (!newFs) {
+        throw new Error("Error while mounting WebAccess FS.");
+      }
+
+      const systemDirectory = SYSTEM_DIRECTORIES.has(directory);
+      const mappedName =
+        removeInvalidFilenameCharacters(handle.name).trim() ||
+        (systemDirectory ? "" : "mapped");
+      const mappedPath = join(directory, mappedName);
+
+      await mount(mappedPath, newFs);
+
+      // FileSystemObserver for live updates (if supported)
+      if ("FileSystemObserver" in window) {
+        try {
+          const observer = new window.FileSystemObserver((records) => {
+            for (const record of records) {
+              const { relativePathComponents, relativePathMovedFrom, type } =
+                record;
+              let newFile = "";
+              let oldFile = "";
+
+              if (type === "appeared") {
+                newFile =
+                  relativePathComponents[relativePathComponents.length - 1];
+              } else if (type === "disappeared") {
+                oldFile =
+                  relativePathComponents[relativePathComponents.length - 1];
+              } else if (relativePathMovedFrom && type === "moved") {
+                oldFile =
+                  relativePathMovedFrom[relativePathMovedFrom.length - 1];
+                newFile =
+                  relativePathComponents[relativePathComponents.length - 1];
               }
 
-              const systemDirectory = SYSTEM_DIRECTORIES.has(directory);
-              const mappedName =
-                removeInvalidFilenameCharacters(handle.name).trim() ||
-                (systemDirectory ? "" : DEFAULT_MAPPED_NAME);
-              const mappedPath = join(directory, mappedName);
-
-              rootFs?.mount?.(mappedPath, newFs);
-              resolve(systemDirectory ? directory : mappedName);
-
-              let observer: FileSystemObserver | undefined;
-
-              if ("FileSystemObserver" in window) {
-                observer = new window.FileSystemObserver(([record]) => {
-                  const {
-                    relativePathComponents,
-                    relativePathMovedFrom,
-                    type,
-                  } = record;
-                  let newFile = "";
-                  let oldFile = "";
-
-                  if (type === "appeared") {
-                    newFile =
-                      relativePathComponents[relativePathComponents.length - 1];
-                  } else if (type === "disappeared") {
-                    oldFile =
-                      relativePathComponents[relativePathComponents.length - 1];
-                  } else if (relativePathMovedFrom && type === "moved") {
-                    oldFile =
-                      relativePathMovedFrom[relativePathMovedFrom.length - 1];
-                    newFile =
-                      relativePathComponents[relativePathComponents.length - 1];
-                  }
-
-                  if (newFile || oldFile) {
-                    updateFolder(
-                      join(mappedPath, ...relativePathComponents.slice(0, -1)),
-                      newFile,
-                      oldFile
-                    );
-                  }
-                });
-
-                try {
-                  observer.observe(handle, { recursive: true });
-                } catch {
-                  observer = undefined;
-                }
+              if (newFile || oldFile) {
+                updateFolder(
+                  join(mappedPath, ...relativePathComponents.slice(0, -1)),
+                  newFile,
+                  oldFile
+                );
               }
-
-              import("contexts/fileSystem/functions").then(
-                ({ addFileSystemHandle }) =>
-                  addFileSystemHandle(directory, handle, mappedName, observer)
-              );
-            });
+            }
           });
-        } else {
-          reject(new Error("Unsupported FileSystemDirectoryHandle type."));
+
+          await observer.observe(handle, { recursive: true });
+        } catch {
+          // Observer not supported or failed - non-critical
         }
-      });
+      }
+
+      import("contexts/fileSystem/functions").then(({ addFileSystemHandle }) =>
+        addFileSystemHandle(directory, handle, mappedName)
+      );
+
+      return systemDirectory ? directory : mappedName;
     },
     [rootFs, updateFolder]
   );
+
   const mountFs = useCallback(
     async (url: string): Promise<void> => {
       const fileData = await readFile(url);
 
-      return new Promise((resolve, reject) => {
-        const isIso = getExtension(url) === ".iso";
-        const createFs: BFSCallback<IIsoFS | IZipFS> = (createError, newFs) => {
-          if (createError) {
-            reject(
-              new Error(`Error while mounting ${isIso ? "ISO" : "ZIP"} FS.`)
-            );
-          } else if (newFs) {
-            rootFs?.mount?.(url, newFs);
-            resolve();
-          }
-        };
+      const isIso = getExtension(url) === ".iso";
+      const { Zip, Iso } = await import("@zenfs/archives");
+      const { resolveMountConfig, mount } = await import("@zenfs/core");
 
-        import("public/System/BrowserFS/extrafs.min.js").then((ExtraFS) => {
-          const {
-            FileSystem: { IsoFS, ZipFS },
-          } = ExtraFS;
-
-          if (isIso) {
-            IsoFS?.Create({ data: fileData }, createFs);
-          } else {
-            ZipFS?.Create({ zipData: fileData }, createFs);
-          }
-        });
+      const newFs = await resolveMountConfig({
+        backend: isIso ? Iso : Zip,
+        data: fileData,
       });
+
+      if (newFs) {
+        await mount(url, newFs);
+      } else {
+        throw new Error(`Error while mounting ${isIso ? "ISO" : "ZIP"} FS.`);
+      }
     },
     [readFile, rootFs]
   );
+
   const unMountFs = useCallback(
-    (url: string): void => rootFs?.umount?.(url),
+    async (url: string): Promise<void> => {
+      if (rootFs?.umount) {
+        await rootFs.umount(url);
+      } else {
+        const { umount } = await import("@zenfs/core");
+        await umount(url);
+      }
+    },
     [rootFs]
   );
+
   const unMapFs = useCallback(
     async (directory: string, hasNoHandle?: boolean): Promise<void> => {
-      unMountFs(directory);
+      await unMountFs(directory);
       updateFolder(dirname(directory), undefined, directory);
 
       if (hasNoHandle) return;
@@ -479,7 +450,9 @@ const useFileSystemContextState = (): FileSystemContextState => {
     },
     [unMountFs, updateFolder]
   );
+
   const { openTransferDialog } = useTransferDialog();
+
   const addFile = useCallback(
     (
       directory: string,
@@ -529,6 +502,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
       }),
     [openTransferDialog]
   );
+
   const mkdirRecursive = useCallback(
     async (path: string): Promise<void> => {
       const pathParts = path.split("/").filter(Boolean);
@@ -555,14 +529,15 @@ const useFileSystemContextState = (): FileSystemContextState => {
     },
     [exists, mkdir]
   );
+
   const deletePath = useCallback(
     async (path: string): Promise<boolean> => {
       let deleted = false;
 
       try {
         deleted = await unlink(path);
-      } catch (error) {
-        if ((error as ApiError).code === "EISDIR") {
+      } catch (error: any) {
+        if (error?.code === "EISDIR") {
           const dirContents = await readdir(path);
 
           await Promise.all(
@@ -580,6 +555,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
     },
     [closeWithTransition, readdir, rmdir, unlink]
   );
+
   const createPath = useCallback(
     async (
       name: string,
@@ -621,8 +597,8 @@ const useFileSystemContextState = (): FileSystemContextState => {
               await mkdir(makePath);
               updateFolder(dirname(makePath), basename(makePath));
             }
-          } catch (error) {
-            if ((error as ApiError).code === "ENOENT") {
+          } catch (error: any) {
+            if (error?.code === "ENOENT") {
               await maybeMakePath(dirname(makePath));
               await maybeMakePath(makePath);
             }
@@ -639,8 +615,8 @@ const useFileSystemContextState = (): FileSystemContextState => {
           ) {
             return uniqueName;
           }
-        } catch (error) {
-          if ((error as ApiError)?.code === "EEXIST") {
+        } catch (error: any) {
+          if (error?.code === "EEXIST") {
             return createPath(name, directory, buffer, iteration + 1);
           }
         }
@@ -650,6 +626,7 @@ const useFileSystemContextState = (): FileSystemContextState => {
     },
     [exists, mkdir, rename, rootFs?.mntMap, updateFolder, writeFile]
   );
+
   const restoredFsHandles = useRef(false);
 
   useEffect(() => {
