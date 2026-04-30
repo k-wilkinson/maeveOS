@@ -52,6 +52,7 @@
     "@zenfs/core": "^2.5.6",
     "@zenfs/dom": "^1.2.9",
     "@zenfs/emscripten": "^1.0.7",
+    "Burn-My-Windows": "file:vendor/Burn-My-Windows",
     "ani-cursor": "^0.0.5",
     "butterchurn-presets": "^3.0.0-beta.4",
     "canvas-confetti": "^1.9.3",
