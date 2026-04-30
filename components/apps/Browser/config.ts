@@ -32,7 +32,7 @@ export const bookmarks: Bookmark[] = [
   {
     icon: FAVICON_BASE_PATH,
     name: "maeveOS",
-    url: "https://dustinbrett.com/",
+    url: "https://kote.is-a.dev/",
   },
   {
     icon: "/System/Icons/Favicons/dir.webp",
