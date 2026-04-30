@@ -1,4 +1,4 @@
-## 🌌 **daedalOS** 🌌
+## 🌌 **maeveOS** 🌌
 
 ## _Desktop environment in the browser_
 

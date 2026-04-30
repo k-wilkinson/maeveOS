@@ -31,7 +31,7 @@ export const SURF_TO_MISC = {
 export const bookmarks: Bookmark[] = [
   {
     icon: FAVICON_BASE_PATH,
-    name: "daedalOS",
+    name: "maeveOS",
     url: "https://dustinbrett.com/",
   },
   {
