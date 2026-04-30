@@ -1,0 +1,6 @@
+{
+  "name": "Burn-My-Windows",
+  "version": "43.0.0",
+  "description": "Vendored shaders from github.com/Schneegans/Burn-My-Windows",
+  "license": "GPL-3.0-or-later"
+}

@@ -1,13 +1,13 @@
 import { basename, dirname, extname, join } from "path";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
+import { type Stats } from "@zenfs/core";
 import {
   type FileReaders,
   type ObjectReader,
   type ObjectReaders,
 } from "components/system/Dialogs/Transfer/useTransferDialog";
-import {
+import getModifiedTime, {
   getFileType,
-  getModifiedTime,
+
 } from "components/system/Files/FileEntry/functions";
 import {
   type Files,

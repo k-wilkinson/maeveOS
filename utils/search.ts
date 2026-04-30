@@ -1,8 +1,6 @@
 import { basename, extname } from "path";
 import { useEffect, useState } from "react";
 import { type Index } from "lunr";
-import type OverlayFS from "browserfs/dist/node/backend/OverlayFS";
-import type IndexedDBFileSystem from "browserfs/dist/node/backend/IndexedDB";
 import { useFileSystem } from "contexts/fileSystem";
 import { type RootFileSystem } from "contexts/fileSystem/useAsyncFs";
 import SEARCH_EXTENSIONS from "scripts/searchExtensions.json";
@@ -87,28 +85,12 @@ const search = async (
   return [];
 };
 
-interface IWritableFs extends Omit<IndexedDBFileSystem, "_cache"> {
-  _cache: {
-    map: Map<string, unknown>;
-  };
-}
-
 const buildDynamicIndex = async (
   readFile: (path: string) => Promise<Buffer>,
-  rootFs?: RootFileSystem
+  _rootFs?: RootFileSystem
 ): Promise<Index> => {
-  const overlayFs = rootFs?._getFs("/")?.fs as OverlayFS;
-  const overlayedFileSystems = overlayFs?.getOverlayedFileSystems();
-  const writable = overlayedFileSystems?.writable as IWritableFs;
-
-  const writableFiles =
-    (typeof writable?._cache?.map?.keys === "function" && [
-      ...writable._cache.map.keys(),
-    ]) ||
-    Object.keys(
-      (writable?._cache?.map as unknown as Record<string, unknown>) || {}
-    ) ||
-    [];
+  // ZenFS: writable layer introspection not available; dynamic index is empty
+  const writableFiles: string[] = [];
   const filesToIndex = writableFiles.filter((path) => {
     const ext = getExtension(path);
 

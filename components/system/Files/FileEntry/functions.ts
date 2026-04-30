@@ -1,7 +1,6 @@
 import { basename, dirname, join } from "path";
+import { type Stats } from "@zenfs/core";
 import ini from "ini";
-import { type FSModule } from "browserfs/dist/node/core/FS";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
 import { monacoExtensions } from "components/apps/MonacoEditor/extensions";
 import extensions from "components/system/Files/FileEntry/extensions";
 import { type FileInfo } from "components/system/Files/FileEntry/useFileInfo";
@@ -58,6 +57,7 @@ import {
   resizeImage,
 } from "utils/functions";
 
+export type { Stats };
 type InternetShortcut = {
   BaseURL: string;
   Comment: string;
@@ -80,7 +80,7 @@ export const isExistingFile = (
   { birthtimeMs, ctimeMs }: Stats = {} as Stats
 ): boolean => Boolean(birthtimeMs && birthtimeMs === ctimeMs);
 
-export const getModifiedTime = (path: string, stats: FileStat): number => {
+const getModifiedTime = (path: string, stats: FileStat): number => {
   const { mtimeMs } = stats;
 
   if (isExistingFile(stats)) {
@@ -91,31 +91,32 @@ export const getModifiedTime = (path: string, stats: FileStat): number => {
 
   return mtimeMs;
 };
+export default getModifiedTime;
 
-export const getIconFromIni = (
-  fs: FSModule,
-  directory: string
-): Promise<string> =>
+export const getIconFromIni = (fs: any, directory: string): Promise<string> =>
   new Promise((resolve) => {
     const iniPath = join(directory, "desktop.ini");
 
-    fs.lstat(iniPath, (statError, stats) => {
+    fs.lstat(iniPath, (statError: any, stats: Stats) => {
       if (statError) resolve("");
       else if (stats && isExistingFile(stats)) {
         import("public/.index/iniIcons.json").then(({ default: iniCache }) =>
           resolve(iniCache[directory as keyof typeof iniCache] || "")
         );
       } else {
-        fs.readFile(iniPath, (readError, contents = Buffer.from("")) => {
-          if (readError) resolve("");
-          else {
-            const {
-              ShellClassInfo: { IconFile = "" },
-            } = ini.parse(contents.toString()) as ShellClassInfo;
+        fs.readFile(
+          iniPath,
+          (readError: any, contents: Buffer = Buffer.from("")) => {
+            if (readError) resolve("");
+            else {
+              const {
+                ShellClassInfo: { IconFile = "" },
+              } = ini.parse(contents.toString()) as ShellClassInfo;
 
-            resolve(IconFile);
+              resolve(IconFile);
+            }
           }
-        });
+        );
       }
     });
   });
@@ -212,18 +213,18 @@ export const makeExternalShortcut = (contents: Buffer): Buffer => {
 };
 
 export const getCachedIconUrl = async (
-  fs: FSModule,
+  fs: any,
   cachedIconPath: string
 ): Promise<string> =>
   new Promise((resolve) => {
-    fs.lstat(cachedIconPath, (statError, cachedIconStats) => {
+    fs.lstat(cachedIconPath, (statError: any, cachedIconStats: Stats) => {
       if (!statError && cachedIconStats) {
         if (isExistingFile(cachedIconStats)) {
           resolve(cachedIconPath);
         } else {
           fs.readFile(
             cachedIconPath,
-            (readError, cachedIconData = Buffer.from("")) => {
+            (readError: any, cachedIconData: Buffer = Buffer.from("")) => {
               if (cachedIconData.length >= SMALLEST_PNG_SIZE) {
                 resolve(bufferToUrl(cachedIconData));
               } else if (!readError) fs.unlink(cachedIconPath);
@@ -234,37 +235,40 @@ export const getCachedIconUrl = async (
     });
   });
 
-const getIconsFromCache = (fs: FSModule, path: string): Promise<string[]> =>
+const getIconsFromCache = (fs: any, path: string): Promise<string[]> =>
   new Promise((resolve) => {
     const iconCacheDirectory = join(ICON_CACHE, path);
 
-    fs?.readdir(iconCacheDirectory, async (dirError, possibleIcons = []) => {
-      if (dirError) resolve([]);
-      else {
-        const [firstIcon, ...otherIcons] = possibleIcons.filter((icon) =>
-          icon?.endsWith(ICON_CACHE_EXTENSION)
-        );
+    fs?.readdir(
+      iconCacheDirectory,
+      async (dirError: any, possibleIcons: string[] = []) => {
+        if (dirError) resolve([]);
+        else {
+          const [firstIcon, ...otherIcons] = possibleIcons.filter((icon) =>
+            icon?.endsWith(ICON_CACHE_EXTENSION)
+          );
 
-        resolve(
-          (
-            await Promise.all(
-              [firstIcon, otherIcons[otherIcons.length - 1]]
-                .filter(Boolean)
-                .map(
-                  (cachedIcon): Promise<string> =>
-                    // eslint-disable-next-line promise/param-names
-                    new Promise((resolveIcon) => {
-                      getCachedIconUrl(
-                        fs,
-                        join(iconCacheDirectory, cachedIcon)
-                      ).then(resolveIcon);
-                    })
-                )
-            )
-          ).filter(Boolean)
-        );
+          resolve(
+            (
+              await Promise.all(
+                [firstIcon, otherIcons[otherIcons.length - 1]]
+                  .filter(Boolean)
+                  .map(
+                    (cachedIcon): Promise<string> =>
+                      // eslint-disable-next-line promise/param-names
+                      new Promise((resolveIcon) => {
+                        getCachedIconUrl(
+                          fs,
+                          join(iconCacheDirectory, cachedIcon)
+                        ).then(resolveIcon);
+                      })
+                  )
+              )
+            ).filter(Boolean)
+          );
+        }
       }
-    });
+    );
   });
 
 export const getCoverArt = async (
@@ -295,7 +299,7 @@ export const getCoverArt = async (
 };
 
 export const getInfoWithoutExtension = (
-  fs: FSModule,
+  fs: any,
   rootFs: RootFileSystem,
   path: string,
   isDirectory: boolean,
@@ -347,7 +351,7 @@ export const getInfoWithoutExtension = (
 };
 
 export const getInfoWithExtension = (
-  fs: FSModule,
+  fs: any,
   path: string,
   extension: string,
   callback: (value: FileInfo) => void
@@ -366,28 +370,33 @@ export const getInfoWithExtension = (
     });
   const decodeImage = (): void =>
     getInfoByFileExtension(PHOTO_ICON, (signal) =>
-      fs.readFile(path, async (error, contents = Buffer.from("")) => {
-        if (!error && contents.length > 0 && !signal.aborted) {
-          let image = contents;
+      fs.readFile(
+        path,
+        async (error: any, contents: Buffer = Buffer.from("")) => {
+          if (!error && contents.length > 0 && !signal.aborted) {
+            let image = contents;
 
-          if (!NATIVE_IMAGE_FORMATS.has(extension)) {
-            const { decodeImageToBuffer } = await import("utils/imageDecoder");
-
-            if (!signal.aborted) {
-              const decodedImage = await decodeImageToBuffer(
-                extension,
-                contents
+            if (!NATIVE_IMAGE_FORMATS.has(extension)) {
+              const { decodeImageToBuffer } = await import(
+                "utils/imageDecoder"
               );
 
-              if (decodedImage) image = decodedImage;
+              if (!signal.aborted) {
+                const decodedImage = await decodeImageToBuffer(
+                  extension,
+                  contents
+                );
+
+                if (decodedImage) image = decodedImage;
+              }
+            }
+
+            if (!signal.aborted) {
+              getInfoByFileExtension(bufferToUrl(image, getMimeType(path)));
             }
           }
-
-          if (!signal.aborted) {
-            getInfoByFileExtension(bufferToUrl(image, getMimeType(path)));
-          }
         }
-      })
+      )
     );
 
   switch (extension) {
@@ -443,54 +452,59 @@ export const getInfoWithExtension = (
               `${isCachedUrl ? url : path}${ICON_CACHE_EXTENSION}`
             );
 
-            fs.lstat(cachedIconPath, (statError, cachedIconStats) => {
-              if (!statError && cachedIconStats) {
-                if (isExistingFile(cachedIconStats)) {
-                  callback({
-                    comment,
-                    icon: cachedIconPath,
-                    pid,
-                    subIcons,
-                    url,
-                  });
-                } else {
-                  fs.readFile(cachedIconPath, (_readError, cachedIconData) =>
+            fs.lstat(
+              cachedIconPath,
+              (statError: any, cachedIconStats: Stats) => {
+                if (!statError && cachedIconStats) {
+                  if (isExistingFile(cachedIconStats)) {
                     callback({
                       comment,
-                      icon: bufferToUrl(cachedIconData as Buffer),
+                      icon: cachedIconPath,
                       pid,
                       subIcons,
                       url,
-                    })
-                  );
-                }
-              } else {
-                getInfoWithExtension(fs, url, urlExt, (fileInfo) => {
-                  const {
-                    icon: urlIcon = icon,
-                    getIcon,
-                    subIcons: fileSubIcons = [],
-                  } = fileInfo;
-
-                  if (fileSubIcons.length > 0) {
-                    subIcons.push(
-                      ...fileSubIcons.filter(
-                        (subIcon) => !subIcons.includes(subIcon)
-                      )
+                    });
+                  } else {
+                    fs.readFile(
+                      cachedIconPath,
+                      (_readError: any, cachedIconData: Buffer) =>
+                        callback({
+                          comment,
+                          icon: bufferToUrl(cachedIconData),
+                          pid,
+                          subIcons,
+                          url,
+                        })
                     );
                   }
+                } else {
+                  getInfoWithExtension(fs, url, urlExt, (fileInfo) => {
+                    const {
+                      icon: urlIcon = icon,
+                      getIcon,
+                      subIcons: fileSubIcons = [],
+                    } = fileInfo;
 
-                  callback({
-                    comment,
-                    getIcon,
-                    icon: urlIcon,
-                    pid,
-                    subIcons,
-                    url,
+                    if (fileSubIcons.length > 0) {
+                      subIcons.push(
+                        ...fileSubIcons.filter(
+                          (subIcon) => !subIcons.includes(subIcon)
+                        )
+                      );
+                    }
+
+                    callback({
+                      comment,
+                      getIcon,
+                      icon: urlIcon,
+                      pid,
+                      subIcons,
+                      url,
+                    });
                   });
-                });
+                }
               }
-            });
+            );
           } else if (isYouTubeUrl(url)) {
             const ytId = new URL(url).pathname.replace("/", "");
             const cachedIconPath = join(
@@ -510,7 +524,7 @@ export const getInfoWithExtension = (
               ...baseFileInfo,
               getIcon: isDefaultIcon
                 ? () =>
-                    fs.exists(cachedIconPath, (cachedIconExists) =>
+                    fs.exists(cachedIconPath, (cachedIconExists: boolean) =>
                       callback({
                         ...baseFileInfo,
                         icon: cachedIconExists
@@ -546,12 +560,12 @@ export const getInfoWithExtension = (
           }
         };
 
-        fs.lstat(path, (statError, stats) => {
+        fs.lstat(path, (statError: any, stats: Stats) => {
           if (statError) getInfoByFileExtension();
           else if (isExistingFile(stats)) {
             handleShortcut(getCachedShortcut(path));
           } else {
-            fs.readFile(path, (readError, contents): void => {
+            fs.readFile(path, (readError: any, contents: Buffer): void => {
               if (readError || !contents) getInfoByFileExtension();
               else handleShortcut(getShortcutInfo(contents));
             });
@@ -561,18 +575,21 @@ export const getInfoWithExtension = (
       break;
     case ".exe":
       getInfoByFileExtension("/System/Icons/executable.webp", (signal) =>
-        fs.readFile(path, async (error, contents = Buffer.from("")) => {
-          if (!error && contents.length > 0 && !signal.aborted) {
-            const { extractExeIcon } = await import(
-              "components/system/Files/FileEntry/exeIcons"
-            );
-            const exeIcon = await extractExeIcon(contents);
+        fs.readFile(
+          path,
+          async (error: any, contents: Buffer = Buffer.from("")) => {
+            if (!error && contents.length > 0 && !signal.aborted) {
+              const { extractExeIcon } = await import(
+                "components/system/Files/FileEntry/exeIcons"
+              );
+              const exeIcon = await extractExeIcon(contents);
 
-            if (exeIcon && !signal.aborted) {
-              getInfoByFileExtension(bufferToUrl(exeIcon));
+              if (exeIcon && !signal.aborted) {
+                getInfoByFileExtension(bufferToUrl(exeIcon));
+              }
             }
           }
-        })
+        )
       );
       break;
     case ".flac":
@@ -583,15 +600,18 @@ export const getInfoWithExtension = (
           ? `/System/Icons/${extensions[".mp3"].icon as string}.webp`
           : undefined,
         (signal) =>
-          fs.readFile(path, (error, contents = Buffer.from("")) => {
-            if (!error && !signal.aborted) {
-              getCoverArt(path, contents, signal).then((coverPicture) => {
-                if (coverPicture) {
-                  getInfoByFileExtension(bufferToUrl(coverPicture));
-                }
-              });
+          fs.readFile(
+            path,
+            (error: any, contents: Buffer = Buffer.from("")) => {
+              if (!error && !signal.aborted) {
+                getCoverArt(path, contents, signal).then((coverPicture) => {
+                  if (coverPicture) {
+                    getInfoByFileExtension(bufferToUrl(coverPicture));
+                  }
+                });
+              }
             }
-          })
+          )
       );
       break;
     case ".sav":
@@ -605,46 +625,49 @@ export const getInfoWithExtension = (
       break;
     case ".whtml":
       getInfoByFileExtension("/System/Icons/tinymce.webp", (signal) =>
-        fs.readFile(path, async (error, contents = Buffer.from("")) => {
-          if (!error && contents.length > 0 && !signal.aborted) {
-            const htmlToImage = await getHtmlToImage();
-            const containerElement = document.createElement("div");
+        fs.readFile(
+          path,
+          async (error: any, contents: Buffer = Buffer.from("")) => {
+            if (!error && contents.length > 0 && !signal.aborted) {
+              const htmlToImage = await getHtmlToImage();
+              const containerElement = document.createElement("div");
 
-            containerElement.style.height = "600px";
-            containerElement.style.width = "600px";
-            containerElement.style.padding = "32px";
-            containerElement.style.backgroundColor = "#fff";
-            containerElement.style.zIndex = "-1";
-            containerElement.style.overflow = "hidden";
-            containerElement.style.opacity = "0";
-            containerElement.style.userSelect = "none";
-            // eslint-disable-next-line deprecation/deprecation
-            containerElement.style.webkitUserSelect = "none";
+              containerElement.style.height = "600px";
+              containerElement.style.width = "600px";
+              containerElement.style.padding = "32px";
+              containerElement.style.backgroundColor = "#fff";
+              containerElement.style.zIndex = "-1";
+              containerElement.style.overflow = "hidden";
+              containerElement.style.opacity = "0";
+              containerElement.style.userSelect = "none";
+              // eslint-disable-next-line deprecation/deprecation
+              containerElement.style.webkitUserSelect = "none";
 
-            containerElement.innerHTML = contents.toString();
+              containerElement.innerHTML = contents.toString();
 
-            document.body.append(containerElement);
+              document.body.append(containerElement);
 
-            let documentImage: string | undefined;
+              let documentImage: string | undefined;
 
-            try {
-              documentImage = await htmlToImage?.toPng(containerElement, {
-                skipAutoScale: true,
-                style: {
-                  opacity: "1",
-                },
-              });
-            } catch {
-              // Ignore failure to captrure
-            }
+              try {
+                documentImage = await htmlToImage?.toPng(containerElement, {
+                  skipAutoScale: true,
+                  style: {
+                    opacity: "1",
+                  },
+                });
+              } catch {
+                // Ignore failure to captrure
+              }
 
-            containerElement.remove();
+              containerElement.remove();
 
-            if (documentImage && documentImage.length > SMALLEST_PNG_SIZE) {
-              getInfoByFileExtension(documentImage);
+              if (documentImage && documentImage.length > SMALLEST_PNG_SIZE) {
+                getInfoByFileExtension(documentImage);
+              }
             }
           }
-        })
+        )
       );
       break;
     default:
@@ -655,150 +678,166 @@ export const getInfoWithExtension = (
         decodeImage();
       } else if (IMAGE_FILE_EXTENSIONS.has(extension)) {
         getInfoByFileExtension(PHOTO_ICON, (signal) =>
-          fs.readFile(path, (error, contents = Buffer.from("")) => {
-            if (!error && contents.length > 0 && !signal.aborted) {
-              const imageIcon = new Image();
+          fs.readFile(
+            path,
+            (error: any, contents: Buffer = Buffer.from("")) => {
+              if (!error && contents.length > 0 && !signal.aborted) {
+                const imageIcon = new Image();
 
-              imageIcon.addEventListener(
-                "load",
-                () => getInfoByFileExtension(imageIcon.src),
-                { signal, ...ONE_TIME_PASSIVE_EVENT }
-              );
-              imageIcon.decoding = "async";
+                imageIcon.addEventListener(
+                  "load",
+                  () => getInfoByFileExtension(imageIcon.src),
+                  { signal, ...ONE_TIME_PASSIVE_EVENT }
+                );
+                imageIcon.decoding = "async";
 
-              const mimeType = getMimeType(path);
+                const mimeType = getMimeType(path);
 
-              if (contents.length > MAX_THUMBNAIL_FILE_SIZE) {
-                resizeImage(
-                  bufferToBlob(contents, mimeType),
-                  MAX_ICON_SIZE
-                ).then((resizedBlob) => {
-                  imageIcon.src = URL.createObjectURL(resizedBlob);
-                });
-              } else {
-                imageIcon.src = bufferToUrl(contents, mimeType);
+                if (contents.length > MAX_THUMBNAIL_FILE_SIZE) {
+                  resizeImage(
+                    bufferToBlob(contents, mimeType),
+                    MAX_ICON_SIZE
+                  ).then((resizedBlob) => {
+                    imageIcon.src = URL.createObjectURL(resizedBlob);
+                  });
+                } else {
+                  imageIcon.src = bufferToUrl(contents, mimeType);
+                }
               }
             }
-          })
+          )
         );
       } else if (AUDIO_FILE_EXTENSIONS.has(extension)) {
         getInfoByFileExtension(processDirectory.VideoPlayer.icon);
       } else if (VIDEO_FILE_EXTENSIONS.has(extension)) {
         subIcons.push(processDirectory.VideoPlayer.icon);
         getInfoByFileExtension(processDirectory.VideoPlayer.icon, (signal) =>
-          fs.readFile(path, async (error, contents = Buffer.from("")) => {
-            if (!error) {
-              const video = document.createElement("video");
-              const canvas = document.createElement("canvas");
-              const context = canvas.getContext("2d", {
-                ...BASE_2D_CONTEXT_OPTIONS,
-                willReadFrequently: true,
-              });
-              const gif = await getGifJs();
-              let framesRemaining = ICON_GIF_FPS * ICON_GIF_SECONDS;
-              const getFrame = (
-                second: number,
-                firstFrame: boolean
-              ): Promise<void> =>
-                new Promise((resolve) => {
-                  video.currentTime = second;
+          fs.readFile(
+            path,
+            async (error: any, contents: Buffer = Buffer.from("")) => {
+              if (!error) {
+                const video = document.createElement("video");
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d", {
+                  ...BASE_2D_CONTEXT_OPTIONS,
+                  willReadFrequently: true,
+                });
+                const gif = await getGifJs();
+                let framesRemaining = ICON_GIF_FPS * ICON_GIF_SECONDS;
+                const getFrame = (
+                  second: number,
+                  firstFrame: boolean
+                ): Promise<void> =>
+                  new Promise((resolve) => {
+                    video.currentTime = second;
 
-                  if ("seekToNextFrame" in video) {
-                    (video as VideoElementWithSeek)
-                      .seekToNextFrame?.()
-                      .catch(() => {
-                        // Ignore error during seekToNextFrame
-                      });
-                  } else if (firstFrame) {
-                    video.load();
-                  }
-
-                  const processFrame = (): void => {
-                    if (!context || !canvas.width || !canvas.height) return;
-
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    gif.addFrame(
-                      context.getImageData(0, 0, canvas.width, canvas.height),
-                      { copy: true, delay: 100 }
-                    );
-                    framesRemaining -= 1;
-
-                    if (framesRemaining === 0) {
-                      gif
-                        .on("finished", (blob) => {
-                          blobToBase64(blob).then(getInfoByFileExtension);
-                          gif.freeWorkers.forEach((worker) =>
-                            worker?.terminate()
-                          );
-                        })
-                        .render();
+                    if ("seekToNextFrame" in video) {
+                      (video as VideoElementWithSeek)
+                        .seekToNextFrame?.()
+                        .catch(() => {
+                          // Ignore error during seekToNextFrame
+                        });
+                    } else if (firstFrame) {
+                      video.load();
                     }
 
-                    resolve();
-                  };
+                    const processFrame = (): void => {
+                      if (!context || !canvas.width || !canvas.height) return;
 
-                  if ("requestVideoFrameCallback" in video) {
-                    video.requestVideoFrameCallback(processFrame);
-                  } else {
-                    (video as HTMLVideoElement).addEventListener(
-                      "canplaythrough",
-                      processFrame,
-                      { signal, ...ONE_TIME_PASSIVE_EVENT }
-                    );
-                  }
-                });
+                      context.drawImage(
+                        video,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                      );
+                      gif.addFrame(
+                        context.getImageData(0, 0, canvas.width, canvas.height),
+                        { copy: true, delay: 100 }
+                      );
+                      framesRemaining -= 1;
 
-              video.addEventListener(
-                "loadeddata",
-                () => {
-                  canvas.height =
-                    video.videoHeight > video.videoWidth
-                      ? MAX_ICON_SIZE
-                      : (MAX_ICON_SIZE * video.videoHeight) / video.videoWidth;
-                  canvas.width =
-                    video.videoWidth > video.videoHeight
-                      ? MAX_ICON_SIZE
-                      : (MAX_ICON_SIZE * video.videoWidth) / video.videoHeight;
-
-                  const capturePoints = [
-                    video.duration / 4,
-                    video.duration / 2,
-                  ];
-                  const frameStep = 4 / ICON_GIF_FPS;
-                  const frameCount = framesRemaining / capturePoints.length;
-
-                  capturePoints.forEach(async (capturePoint, index) => {
-                    if (signal.aborted) return;
-
-                    for (
-                      let frame = capturePoint;
-                      frame < capturePoint + frameCount * frameStep;
-                      frame += frameStep
-                    ) {
-                      if (signal.aborted) return;
-
-                      const firstFrame = index === 0;
-
-                      // eslint-disable-next-line no-await-in-loop
-                      await getFrame(frame, firstFrame);
-
-                      if (firstFrame && frame === capturePoint) {
-                        getInfoByFileExtension(canvas.toDataURL("image/jpeg"));
+                      if (framesRemaining === 0) {
+                        gif
+                          .on("finished", (blob) => {
+                            blobToBase64(blob).then(getInfoByFileExtension);
+                            gif.freeWorkers.forEach((worker) =>
+                              worker?.terminate()
+                            );
+                          })
+                          .render();
                       }
+
+                      resolve();
+                    };
+
+                    if ("requestVideoFrameCallback" in video) {
+                      video.requestVideoFrameCallback(processFrame);
+                    } else {
+                      (video as HTMLVideoElement).addEventListener(
+                        "canplaythrough",
+                        processFrame,
+                        { signal, ...ONE_TIME_PASSIVE_EVENT }
+                      );
                     }
                   });
-                },
-                { signal, ...ONE_TIME_PASSIVE_EVENT }
-              );
 
-              video.src = bufferToUrl(
-                contents,
-                isSafari()
-                  ? getMimeType(path) || VIDEO_FALLBACK_MIME_TYPE
-                  : undefined
-              );
+                video.addEventListener(
+                  "loadeddata",
+                  () => {
+                    canvas.height =
+                      video.videoHeight > video.videoWidth
+                        ? MAX_ICON_SIZE
+                        : (MAX_ICON_SIZE * video.videoHeight) /
+                          video.videoWidth;
+                    canvas.width =
+                      video.videoWidth > video.videoHeight
+                        ? MAX_ICON_SIZE
+                        : (MAX_ICON_SIZE * video.videoWidth) /
+                          video.videoHeight;
+
+                    const capturePoints = [
+                      video.duration / 4,
+                      video.duration / 2,
+                    ];
+                    const frameStep = 4 / ICON_GIF_FPS;
+                    const frameCount = framesRemaining / capturePoints.length;
+
+                    capturePoints.forEach(async (capturePoint, index) => {
+                      if (signal.aborted) return;
+
+                      for (
+                        let frame = capturePoint;
+                        frame < capturePoint + frameCount * frameStep;
+                        frame += frameStep
+                      ) {
+                        if (signal.aborted) return;
+
+                        const firstFrame = index === 0;
+
+                        // eslint-disable-next-line no-await-in-loop
+                        await getFrame(frame, firstFrame);
+
+                        if (firstFrame && frame === capturePoint) {
+                          getInfoByFileExtension(
+                            canvas.toDataURL("image/jpeg")
+                          );
+                        }
+                      }
+                    });
+                  },
+                  { signal, ...ONE_TIME_PASSIVE_EVENT }
+                );
+
+                video.src = bufferToUrl(
+                  contents,
+                  isSafari()
+                    ? getMimeType(path) || VIDEO_FALLBACK_MIME_TYPE
+                    : undefined
+                );
+              }
             }
-          })
+          )
         );
       } else {
         getInfoByFileExtension();

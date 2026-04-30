@@ -8,7 +8,7 @@ import {
 } from "components/apps/TinyMCE/functions";
 import { type IRTFJS } from "components/apps/TinyMCE/types";
 import { type ContainerHookProps } from "components/system/Apps/AppContainer";
-import { getModifiedTime } from "components/system/Files/FileEntry/functions";
+import getModifiedTime from "components/system/Files/FileEntry/functions";
 import useFileDrop from "components/system/Files/FileManager/useFileDrop";
 import useTitle from "components/system/Window/useTitle";
 import { useFileSystem } from "contexts/fileSystem";

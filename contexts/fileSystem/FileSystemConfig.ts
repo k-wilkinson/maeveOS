@@ -1,23 +1,21 @@
-import { type FileSystemConfiguration } from "browserfs";
-import { fs9pToBfs } from "contexts/fileSystem/core";
+import { type configure, CopyOnWrite, Fetch, InMemory } from "@zenfs/core";
+import { IndexedDB } from "@zenfs/dom";
+import { fs9pToZenFsIndex } from "contexts/fileSystem/core";
 
-const index = fs9pToBfs();
+type FileSystemConfigType = Parameters<typeof configure>[0];
 
-const FileSystemConfig = (writeToMemory = false): FileSystemConfiguration => ({
-  fs: "MountableFileSystem",
-  options: {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const FileSystemConfig = (writeToMemory = false): FileSystemConfigType => ({
+  mounts: {
     "/": {
-      fs: "OverlayFS",
-      options: {
-        readable: {
-          fs: "HTTPRequest",
-          options: { index },
-        },
-        writable: {
-          fs: writeToMemory ? "InMemory" : "IndexedDB",
-        },
+      backend: CopyOnWrite,
+      readable: {
+        backend: Fetch,
+        baseUrl: typeof window !== "undefined" ? window.location.origin : "/",
+        index: fs9pToZenFsIndex(),
       },
-    },
+      writable: writeToMemory ? { backend: InMemory } : { backend: IndexedDB },
+    } as any,
   },
 });
 

@@ -1,9 +1,8 @@
 import { basename, extname } from "path";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
+import { type Stats } from "@zenfs/core";
 import useResultsContextMenu from "components/system/Taskbar/Search/useResultsContextMenu";
-import {
-  getModifiedTime,
+import getModifiedTime, {
   getShortcutInfo,
 } from "components/system/Files/FileEntry/functions";
 import { UNKNOWN_ICON } from "components/system/Files/FileManager/icons";

@@ -289,10 +289,10 @@ test.describe("has commands", () => {
   });
 
   test("nslookup", async ({ page }) => {
-    await sendToTerminal({ page }, "nslookup dustinbrett.com");
+    await sendToTerminal({ page }, "nslookup kote.is-a.dev");
     await terminalHasText({ page }, "Server:  cloudflare-dns.com");
     await terminalHasText({ page }, "Address:  1.1.1.1");
-    await terminalHasText({ page }, "Name:    dustinbrett.com");
+    await terminalHasText({ page }, "Name:    kote.is-a.dev");
   });
 
   test("python", async ({ browserName, headless, page }) => {

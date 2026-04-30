@@ -1,8 +1,9 @@
 import { basename, dirname, extname, join, relative } from "path";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AsyncZipOptions, type AsyncZippable } from "fflate";
-import { type ApiError } from "browserfs/dist/node/core/api_error";
-import type Stats from "browserfs/dist/node/core/node_fs_stats";
+import { type Stats } from "@zenfs/core";
+
+type ApiError = { code?: string; path?: string };
 import useTransferDialog, {
   type ObjectReader,
 } from "components/system/Dialogs/Transfer/useTransferDialog";
@@ -433,7 +434,7 @@ const useFolder = (
       const pathExtension = getExtension(path);
 
       if (pathExtension === SHORTCUT_EXTENSION) {
-        fs?.readFile(path, (_readError, contents = Buffer.from("")) =>
+        fs?.readFile(path, (_readError: unknown, contents = Buffer.from("")) =>
           newPath(basename(path), contents)
         );
         return;
